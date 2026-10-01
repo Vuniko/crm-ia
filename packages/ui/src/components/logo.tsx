@@ -1,19 +1,10 @@
 import type * as React from "react";
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
-	<svg
-		xmlns="http://www.w3.org/2000/svg"
-		width={512}
-		height={512}
-		viewBox="0 0 512 512"
-		fill="none"
-		aria-label="Comp AI Logo"
-		{...props}
-	>
-		<path
-			d="m384 99.548 -16.066 -12.508L256.021 0 0 199.096v113.782L256.021 512 512 312.879V199.096zm-127.98 -49.419 79.695 61.975 -40.944 31.803 -3.661 2.837 -35.091 -27.287 -102.399 79.638 35.09 27.287 32.218 25.088 35.09 27.288L358.4 199.074l-35.047 -27.288 3.659 -2.837 40.943 -31.803 79.651 61.952 -40.943 31.852 -150.62 117.163 -79.695 -61.974 -32.218 -25.041 -38.752 -30.125 -40.922 -31.849z"
-			fill="currentColor"
-		/>
+	<svg xmlns="http://www.w3.org/2000/svg" width={512} height={512} viewBox="0 0 512 512" fill="none" aria-label="CRM IA Logo" {...props}>
+		<rect x="48" y="48" width="416" height="416" rx="112" fill="currentColor" />
+		<path d="M342 174c-22-24-51-36-86-36-67 0-118 50-118 118s51 118 118 118c35 0 65-12 87-37l-38-36c-13 14-29 21-49 21-36 0-63-28-63-66s27-66 63-66c19 0 35 7 48 20l38-36Z" fill="var(--background, white)" />
+		<circle cx="363" cy="149" r="29" fill="var(--background, white)" />
 	</svg>
 );
 export default Logo;
