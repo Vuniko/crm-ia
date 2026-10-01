@@ -9,22 +9,12 @@ import { LocalDateTimeHydrator } from "@/components/local-date-time";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TRPCReactProvider } from "@/lib/trpc/client";
 
-const fontSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-
-const fontMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
+const fontSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const fontMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-	title: {
-		default: "Comp AI - CRM",
-		template: "%s · Comp AI CRM",
-	},
-	description: "Customer Relationship Management for Comp AI",
+	title: { default: "CRM IA", template: "%s · CRM IA" },
+	description: "CRM inteligente para equipos comerciales. Organiza clientes, oportunidades y seguimientos con agentes de IA.",
 	icons: {
 		icon: [
 			{ url: "/favicon.svg", type: "image/svg+xml" },
@@ -35,17 +25,9 @@ export const metadata: Metadata = {
 	manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
-	children,
-}: Readonly<{
-	children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html
-			lang="en"
-			suppressHydrationWarning
-			className={cn(fontSans.variable, fontMono.variable, "h-full antialiased")}
-		>
+		<html lang="es" suppressHydrationWarning className={cn(fontSans.variable, fontMono.variable, "h-full antialiased")}>
 			<body className="flex min-h-full flex-col font-sans">
 				<NuqsAdapter>
 					<TRPCReactProvider>
