@@ -4,7 +4,7 @@ import Building from "@carbon/icons-react/es/Building";
 import Close from "@carbon/icons-react/es/Close";
 import Dashboard from "@carbon/icons-react/es/Dashboard";
 import Partnership from "@carbon/icons-react/es/Partnership";
-import Settings from "@carbon/icons-react/es/Settings";
+import Configuración from "@carbon/icons-react/es/Configuración";
 import UserMultiple from "@carbon/icons-react/es/UserMultiple";
 import { Button } from "@crm/ui/components/button";
 import type { CarbonIcon } from "@crm/ui/components/icon";
@@ -40,24 +40,24 @@ type RailItem = {
 };
 
 const ITEMS: RailItem[] = [
-	{ title: "Overview", href: "/", icon: Dashboard, match: "exact" },
+	{ title: "Inicio", href: "/", icon: Dashboard, match: "exact" },
 	{
-		title: "Chat",
+		title: "Agentes IA",
 		href: "/chat",
 		icon: Bot,
 		iconClassName: "size-5",
 		match: "prefix",
 		related: ["/agents"],
 	},
-	{ title: "Companies", href: "/companies", icon: Building, match: "prefix" },
+	{ title: "Empresas", href: "/companies", icon: Building, match: "prefix" },
 	{
-		title: "Contacts",
+		title: "Contactos",
 		href: "/contacts",
 		icon: UserMultiple,
 		match: "prefix",
 	},
-	{ title: "Deals", href: "/deals", icon: Partnership, match: "prefix" },
-	{ title: "Settings", href: "/settings", icon: Settings, match: "prefix" },
+	{ title: "Oportunidades", href: "/deals", icon: Partnership, match: "prefix" },
+	{ title: "Configuración", href: "/settings", icon: Configuración, match: "prefix" },
 ];
 
 function isActive(item: RailItem, pathname: string): boolean {
@@ -137,7 +137,7 @@ function MobileRailLink({
 				aria-current={active ? "page" : undefined}
 				onClick={onNavigate}
 				transitionTypes={[
-					item.title === "Chat" ? "nav-forward" : "nav-lateral",
+					item.title === "Agentes IA" ? "nav-forward" : "nav-lateral",
 				]}
 			>
 				<Icon icon={item.icon} className={item.iconClassName} />
@@ -187,7 +187,7 @@ function MobileRailIconLink({
 export function AppIconRailFallback() {
 	return (
 		<nav
-			aria-label="Primary"
+			aria-label="Navegación principal"
 			aria-busy="true"
 			className="hidden w-14 shrink-0 flex-col items-center gap-1 border-r py-3 md:flex [view-transition-name:app-rail]"
 		>
@@ -223,14 +223,14 @@ export function AppIconRail() {
 			})),
 		[workspaceUrl],
 	);
-	const inChat = items.some(
-		(item) => item.title === "Chat" && isActive(item, pathname),
+	const inAgentes IA = items.some(
+		(item) => item.title === "Agentes IA" && isActive(item, pathname),
 	);
 
 	return (
 		<>
 			<nav
-				aria-label="Primary"
+				aria-label="Navegación principal"
 				className="hidden w-14 shrink-0 flex-col items-center gap-1 border-r py-3 md:flex [view-transition-name:app-rail]"
 			>
 				{items.map((item) => (
@@ -244,23 +244,23 @@ export function AppIconRail() {
 			</nav>
 
 			<Sheet open={open} onOpenChange={setOpen}>
-				{inChat ? (
+				{inAgentes IA ? (
 					<SheetContent
 						side="left"
 						showCloseButton={false}
 						className="w-5/6 max-w-sm flex-row gap-0 p-0"
 					>
 						<SheetHeader className="sr-only">
-							<SheetTitle>Navigation and agent chats</SheetTitle>
+							<SheetTitle>Navegación y agentes IA</SheetTitle>
 						</SheetHeader>
 						<nav
-							aria-label="Primary"
+							aria-label="Navegación principal"
 							className="flex w-14 shrink-0 flex-col items-center gap-1 border-r py-3"
 						>
 							<Button
 								variant="ghost"
 								size="icon"
-								aria-label="Close navigation"
+								aria-label="Cerrar navegación"
 								onClick={() => setOpen(false)}
 							>
 								<Icon icon={Close} />
@@ -284,10 +284,10 @@ export function AppIconRail() {
 				) : (
 					<SheetContent side="left" className="w-64 gap-0 p-0">
 						<SheetHeader>
-							<SheetTitle>Navigation</SheetTitle>
+							<SheetTitle>Navegación</SheetTitle>
 						</SheetHeader>
 						<nav
-							aria-label="Primary"
+							aria-label="Navegación principal"
 							className="flex flex-1 flex-col gap-1 p-2"
 						>
 							{items.map((item) => (
