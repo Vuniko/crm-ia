@@ -4,7 +4,7 @@ import Building from "@carbon/icons-react/es/Building";
 import Close from "@carbon/icons-react/es/Close";
 import Dashboard from "@carbon/icons-react/es/Dashboard";
 import Partnership from "@carbon/icons-react/es/Partnership";
-import Configuración from "@carbon/icons-react/es/Configuración";
+import Settings from "@carbon/icons-react/es/Settings";
 import UserMultiple from "@carbon/icons-react/es/UserMultiple";
 import { Button } from "@crm/ui/components/button";
 import type { CarbonIcon } from "@crm/ui/components/icon";
@@ -57,7 +57,7 @@ const ITEMS: RailItem[] = [
 		match: "prefix",
 	},
 	{ title: "Oportunidades", href: "/deals", icon: Partnership, match: "prefix" },
-	{ title: "Configuración", href: "/settings", icon: Configuración, match: "prefix" },
+	{ title: "Configuración", href: "/settings", icon: Settings, match: "prefix" },
 ];
 
 function isActive(item: RailItem, pathname: string): boolean {
@@ -223,7 +223,7 @@ export function AppIconRail() {
 			})),
 		[workspaceUrl],
 	);
-	const inAgentes IA = items.some(
+	const inAgentesIA = items.some(
 		(item) => item.title === "Agentes IA" && isActive(item, pathname),
 	);
 
@@ -244,7 +244,7 @@ export function AppIconRail() {
 			</nav>
 
 			<Sheet open={open} onOpenChange={setOpen}>
-				{inAgentes IA ? (
+				{inAgentesIA ? (
 					<SheetContent
 						side="left"
 						showCloseButton={false}
