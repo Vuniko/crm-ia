@@ -1,5 +1,13 @@
 # Setup and local development
 
+## Vercel Hobby scheduling
+
+The API uses daily schedules because Hobby rejects cron expressions that run more than once per day.
+Mailbox synchronization runs daily at `0 3 * * *` in UTC, with Hobby scheduling precision.
+The previous five-minute schedule prevents this API from deploying on Hobby.
+Keep `CRON_SECRET` enabled. A higher-frequency schedule needs a compatible plan or a separately configured scheduler.
+Preview deployments do not run cron jobs. A successful preview does not prove that production synchronization runs.
+
 Operational detail moved out of the rule docs. `api.md`, `agent.md` and
 `environment.md` are what agents read before changing code; this is what a person
 reads once.
