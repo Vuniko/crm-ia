@@ -94,7 +94,9 @@ export function TimelineEntry({
 					<Checkbox
 						checked={done}
 						disabled={complete.isPending}
-						aria-label={done ? "Mark as not done" : "Mark as done"}
+						aria-label={
+							done ? "Marcar como pendiente" : "Marcar como completada"
+						}
 						onCheckedChange={(checked) =>
 							complete.mutate({ id: entry.id, completed: checked === true })
 						}
@@ -171,7 +173,7 @@ export function TimelineEntry({
 								tone={overdue ? "error" : "info"}
 								label={
 									<>
-										{overdue ? "Overdue" : "Due"}{" "}
+										{overdue ? "Vencida" : "Vence"}{" "}
 										<LocalRelativeTime date={entry.dueAt} />
 									</>
 								}

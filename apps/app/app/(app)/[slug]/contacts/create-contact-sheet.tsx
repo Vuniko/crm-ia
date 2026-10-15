@@ -39,7 +39,7 @@ function AddButton(props: ComponentProps<typeof Button>) {
 	return (
 		<Button {...props}>
 			<Icon icon={Add} data-icon="inline-start" />
-			New contact
+			Nuevo contacto
 		</Button>
 	);
 }
@@ -80,13 +80,15 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 			onSuccess: async (contact) => {
 				await cache.contact(contact.id);
 				toast.success(
-					`${[contact.firstName, contact.lastName].filter(Boolean).join(" ")} added.`,
+					`${[contact.firstName, contact.lastName].filter(Boolean).join(" ")} creado.`,
 				);
 				await setOpen(null);
 				setFirstName("");
 				setLastName("");
 				setEmail("");
 				setTitle("");
+				setCompany(companyId ?? NONE);
+				setOwnerId(NONE);
 				openRecord({ kind: "contact", id: contact.id });
 			},
 			onError: (error) => toast.error(error.message),
@@ -100,10 +102,10 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 			</SheetTrigger>
 			<SheetContent side="right">
 				<SheetHeader>
-					<SheetTitle>New contact</SheetTitle>
+					<SheetTitle>Nuevo contacto</SheetTitle>
 					<SheetDescription>
-						Email addresses are unique, so importing the same person twice
-						updates them rather than duplicating them.
+						Registra a tu cliente. La empresa y el correo son opcionales. Un
+						correo existente genera un aviso; no reemplaza al contacto.
 					</SheetDescription>
 				</SheetHeader>
 
@@ -112,11 +114,12 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 					className="flex-1 overflow-y-auto px-4"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (create.isPending || !firstName.trim()) return;
 						create.mutate({
-							firstName,
-							lastName: lastName || undefined,
-							email: email || undefined,
-							title: title || undefined,
+							firstName: firstName.trim(),
+							lastName: lastName.trim() || undefined,
+							email: email.trim() || undefined,
+							title: title.trim() || undefined,
 							companyId: company === NONE ? null : company,
 							ownerId: ownerId === NONE ? null : ownerId,
 						});
@@ -124,7 +127,7 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 				>
 					<FieldGroup>
 						<Field>
-							<FieldLabel htmlFor={firstNameId}>First name</FieldLabel>
+							<FieldLabel htmlFor={firstNameId}>Nombre</FieldLabel>
 							<Input
 								id={firstNameId}
 								value={firstName}
@@ -135,7 +138,7 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor={lastNameId}>Last name</FieldLabel>
+							<FieldLabel htmlFor={lastNameId}>Apellidos</FieldLabel>
 							<Input
 								id={lastNameId}
 								value={lastName}
@@ -145,7 +148,7 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor={emailId}>Email</FieldLabel>
+							<FieldLabel htmlFor={emailId}>Correo electrónico</FieldLabel>
 							<Input
 								id={emailId}
 								type="email"
@@ -156,34 +159,36 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor={titleId}>Title</FieldLabel>
+							<FieldLabel htmlFor={titleId}>Cargo (opcional)</FieldLabel>
 							<Input
 								id={titleId}
 								value={title}
 								onChange={(event) => setTitle(event.target.value)}
-								placeholder="Head of Security"
+								placeholder="Cliente o encargado de compras"
 								autoComplete="off"
 							/>
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor="create-contact-company">Company</FieldLabel>
+							<FieldLabel htmlFor="create-contact-company">Empresa</FieldLabel>
 							<CompanyPicker
 								id="create-contact-company"
 								value={company}
 								onValueChange={setCompany}
-								none={{ value: NONE, label: "No company" }}
+								none={{ value: NONE, label: "Sin empresa" }}
 							/>
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor="create-contact-owner">Owner</FieldLabel>
+							<FieldLabel htmlFor="create-contact-owner">
+								Responsable
+							</FieldLabel>
 							<Select value={ownerId} onValueChange={setOwnerId}>
 								<SelectTrigger id="create-contact-owner">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value={NONE}>Unassigned</SelectItem>
+									<SelectItem value={NONE}>Sin asignar</SelectItem>
 									{(users.data ?? []).map((user) => (
 										<SelectItem key={user.id} value={user.id}>
 											{user.name}
@@ -202,10 +207,10 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 						disabled={create.isPending || firstName.trim() === ""}
 					>
 						{create.isPending ? <Spinner /> : null}
-						Add contact
+						Crear contacto
 					</Button>
 					<SheetClose asChild>
-						<Button variant="outline">Cancel</Button>
+						<Button variant="outline">Cancelar</Button>
 					</SheetClose>
 				</SheetFooter>
 			</SheetContent>

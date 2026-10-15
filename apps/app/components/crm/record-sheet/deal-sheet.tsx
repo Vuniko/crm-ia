@@ -137,7 +137,7 @@ export function DealSheet({ dealId }: { dealId: string }) {
 		? [
 				{
 					value: "overview",
-					label: "Overview",
+					label: "Resumen",
 					content: <DealOverview deal={deal} />,
 				},
 				{
@@ -155,7 +155,7 @@ export function DealSheet({ dealId }: { dealId: string }) {
 				},
 				{
 					value: "activity",
-					label: "Activity",
+					label: "Actividad",
 					content: <Timeline anchor={{ dealId: deal.id }} />,
 				},
 				{
