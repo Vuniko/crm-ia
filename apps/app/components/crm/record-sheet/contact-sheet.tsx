@@ -116,18 +116,18 @@ export function ContactSheet({ contactId }: { contactId: string }) {
 		? [
 				{
 					value: "overview",
-					label: "Overview",
+					label: "Resumen",
 					content: <ContactOverview contact={contact} />,
 				},
 				{
 					value: "deals",
-					label: "Deals",
+					label: "Oportunidades",
 					count: contact.deals.length,
 					content: <ContactDeals contact={contact} />,
 				},
 				{
 					value: "activity",
-					label: "Activity",
+					label: "Actividad",
 					content: <Timeline anchor={{ contactId: contact.id }} />,
 				},
 				{

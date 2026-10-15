@@ -36,6 +36,7 @@ import { type ComponentProps, Suspense, useId, useState } from "react";
 import { toast } from "sonner";
 import { CompanyPicker } from "@/components/crm/company-picker";
 import { useOpenRecord } from "@/components/crm/record-sheet/record-stack";
+import { parseDealAmount } from "@/lib/deal-amount-input";
 import { dealStageLabel, OPEN_STAGES } from "@/lib/deal-stage";
 import { SEARCH_PARAM } from "@/lib/search-param-keys";
 import { useCrmCache } from "@/lib/trpc/cache";
@@ -47,7 +48,7 @@ function AddButton(props: ComponentProps<typeof Button>) {
 	return (
 		<Button {...props}>
 			<Icon icon={Add} data-icon="inline-start" />
-			New deal
+			Nueva oportunidad
 		</Button>
 	);
 }
@@ -72,7 +73,8 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 	const [name, setName] = useState("");
 	const [company, setCompany] = useState(companyId ?? UNSET);
 	const [ownerId, setOwnerId] = useState(UNSET);
-	const [stage, setStage] = useState<string>("DEMO_BOOKED");
+	const [stage, setStage] =
+		useState<(typeof OPEN_STAGES)[number]>("DEMO_BOOKED");
 	const [amount, setAmount] = useState("");
 	const [currency, setCurrency] = useState("");
 	const [closeDate, setCloseDate] = useState("");
@@ -93,20 +95,30 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 		trpc.deals.create.mutationOptions({
 			onSuccess: async (deal) => {
 				await cache.deal(deal.id);
-				toast.success(`${deal.name} added.`);
+				toast.success(`${deal.name} creada.`);
 				await setOpen(null);
 				setName("");
 				setAmount("");
 				setCurrency("");
 				setCloseDate("");
+				setCompany(companyId ?? UNSET);
+				setOwnerId(UNSET);
+				setStage("DEMO_BOOKED");
 				openRecord({ kind: "deal", id: deal.id });
 			},
 			onError: (error) => toast.error(error.message),
 		}),
 	);
 
+	const amountCents = parseDealAmount(amount);
+	const amountError = amountCents === undefined;
+	const amountHelpId = useId();
+
 	const ready =
-		name.trim() !== "" && company !== UNSET && resolvedOwner !== UNSET;
+		!amountError &&
+		name.trim() !== "" &&
+		company !== UNSET &&
+		resolvedOwner !== UNSET;
 
 	return (
 		<Sheet open={open} onOpenChange={(next) => setOpen(next || null)}>
@@ -115,9 +127,10 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 			</SheetTrigger>
 			<SheetContent side="right">
 				<SheetHeader>
-					<SheetTitle>New deal</SheetTitle>
+					<SheetTitle>Nueva oportunidad</SheetTitle>
 					<SheetDescription>
-						Every deal belongs to a company and has someone's name against it.
+						Registra el producto y el cliente. Selecciona una empresa y un
+						responsable.
 					</SheetDescription>
 				</SheetHeader>
 
@@ -126,15 +139,13 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 					className="flex-1 overflow-y-auto px-4"
 					onSubmit={(event) => {
 						event.preventDefault();
-						const parsed = Number.parseFloat(amount);
+						if (!ready || create.isPending) return;
 						create.mutate({
-							name,
+							name: name.trim(),
 							companyId: company,
 							ownerId: resolvedOwner,
-							stage: stage as never,
-							amountCents: Number.isFinite(parsed)
-								? Math.round(parsed * 100)
-								: null,
+							stage,
+							amountCents,
 							currency: currency || workspaceCurrency,
 							expectedCloseDate: closeDate || null,
 						});
@@ -142,19 +153,19 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 				>
 					<FieldGroup>
 						<Field>
-							<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+							<FieldLabel htmlFor={nameId}>Nombre</FieldLabel>
 							<Input
 								id={nameId}
 								value={name}
 								onChange={(event) => setName(event.target.value)}
-								placeholder="Stripe — Comp AI"
+								placeholder="Zapatillas urbanas · talla 39 · Ana"
 								autoComplete="off"
 								required
 							/>
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor="create-deal-company">Company</FieldLabel>
+							<FieldLabel htmlFor="create-deal-company">Empresa</FieldLabel>
 							<CompanyPicker
 								id="create-deal-company"
 								value={company}
@@ -163,10 +174,10 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor="create-deal-owner">Owner</FieldLabel>
+							<FieldLabel htmlFor="create-deal-owner">Responsable</FieldLabel>
 							<Select value={resolvedOwner} onValueChange={setOwnerId}>
 								<SelectTrigger id="create-deal-owner">
-									<SelectValue placeholder="Choose an owner" />
+									<SelectValue placeholder="Selecciona un responsable" />
 								</SelectTrigger>
 								<SelectContent>
 									{(users.data ?? []).map((user) => (
@@ -179,8 +190,13 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor="create-deal-stage">Stage</FieldLabel>
-							<Select value={stage} onValueChange={setStage}>
+							<FieldLabel htmlFor="create-deal-stage">Etapa</FieldLabel>
+							<Select
+								value={stage}
+								onValueChange={(value) =>
+									setStage(value as (typeof OPEN_STAGES)[number])
+								}
+							>
 								<SelectTrigger id="create-deal-stage">
 									<SelectValue />
 								</SelectTrigger>
@@ -193,27 +209,26 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 								</SelectContent>
 							</Select>
 							<FieldDescription>
-								A new deal is an open deal — close it from the pipeline once
-								there is an outcome to record.
+								Selecciona una etapa abierta. Registra la venta ganada o perdida
+								desde el proceso comercial.
 							</FieldDescription>
 						</Field>
 
-						<Field>
-							<FieldLabel htmlFor={amountId}>Amount</FieldLabel>
+						<Field data-invalid={amountError || undefined}>
+							<FieldLabel htmlFor={amountId}>Importe</FieldLabel>
 							<div className="flex gap-2">
 								<Input
 									id={amountId}
+									aria-invalid={amountError || undefined}
+									aria-describedby={amountHelpId}
 									value={amount}
 									onChange={(event) => setAmount(event.target.value)}
-									placeholder="24000"
+									placeholder="120,50"
 									inputMode="decimal"
 									autoComplete="off"
 								/>
 								<Select value={resolvedCurrency} onValueChange={setCurrency}>
-									<SelectTrigger
-										aria-label="Currency"
-										className="w-28 shrink-0"
-									>
+									<SelectTrigger aria-label="Moneda" className="w-28 shrink-0">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -225,15 +240,25 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 									</SelectContent>
 								</Select>
 							</div>
+							<FieldDescription
+								id={amountHelpId}
+								role={amountError ? "alert" : undefined}
+							>
+								{amountError
+									? "Usa un importe positivo con hasta dos decimales y sin separadores de miles."
+									: "Acepta 120,50 o 120.50. Déjalo vacío si aún no conoces el importe."}
+							</FieldDescription>
 						</Field>
 
 						<Field>
-							<FieldLabel htmlFor={closeDateId}>Expected close date</FieldLabel>
+							<FieldLabel htmlFor={closeDateId}>
+								Fecha estimada de cierre
+							</FieldLabel>
 							<DatePicker
 								id={closeDateId}
 								value={closeDate}
 								onChange={setCloseDate}
-								placeholder="No date yet"
+								placeholder="Sin fecha"
 							/>
 						</Field>
 					</FieldGroup>
@@ -246,10 +271,10 @@ function CreateDealForm({ companyId }: { companyId?: string }) {
 						disabled={create.isPending || !ready}
 					>
 						{create.isPending ? <Spinner /> : null}
-						Add deal
+						Crear oportunidad
 					</Button>
 					<SheetClose asChild>
-						<Button variant="outline">Cancel</Button>
+						<Button variant="outline">Cancelar</Button>
 					</SheetClose>
 				</SheetFooter>
 			</SheetContent>
