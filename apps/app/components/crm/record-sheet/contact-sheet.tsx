@@ -21,11 +21,16 @@ import { PersonAvatar } from "@crm/ui/components/person-avatar";
 import { SimpleTable, SimpleTableRow } from "@crm/ui/components/simple-table";
 import { StatusIndicator } from "@crm/ui/components/status-indicator";
 import { TableCell } from "@crm/ui/components/table";
+import {
+	CONTACT_CHANNELS,
+	contactProfileInput,
+} from "@crm/validation/contact-profile";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AgentPanel } from "@/components/crm/agent-panel";
 import { InlineCompanyField } from "@/components/crm/company-picker";
 import { contactName } from "@/components/crm/contact-name";
+import { ContactQuickActions } from "@/components/crm/contact-quick-actions";
 import { ContactEnrichmentAction } from "@/components/crm/enrichment-actions";
 import { EnrichmentIndicator } from "@/components/crm/enrichment-status";
 import { FactProvenance, FactSuggestion } from "@/components/crm/facts";
@@ -216,14 +221,14 @@ export function ContactSheet({ contactId }: { contactId: string }) {
 			stats={
 				contact ? (
 					<DetailSheetStats>
-						<DetailSheetStat label="Company">
+						<DetailSheetStat label="Empresa">
 							{contact.company ? (
 								<CompanyStat company={contact.company} />
 							) : (
 								<EmptyCellValue />
 							)}
 						</DetailSheetStat>
-						<DetailSheetStat label="Email">
+						<DetailSheetStat label="Correo electrónico">
 							{contact.email ? (
 								<a
 									href={`mailto:${contact.email}`}
@@ -235,7 +240,7 @@ export function ContactSheet({ contactId }: { contactId: string }) {
 								<EmptyCellValue />
 							)}
 						</DetailSheetStat>
-						<DetailSheetStat label="Phone">
+						<DetailSheetStat label="Teléfono / WhatsApp">
 							{contact.phone ? (
 								<a
 									href={`tel:${contact.phone}`}
@@ -247,7 +252,7 @@ export function ContactSheet({ contactId }: { contactId: string }) {
 								<EmptyCellValue />
 							)}
 						</DetailSheetStat>
-						<DetailSheetStat label="Owner">
+						<DetailSheetStat label="Responsable">
 							<OwnerCell owner={contact.owner} />
 						</DetailSheetStat>
 					</DetailSheetStats>
@@ -323,41 +328,90 @@ function ContactOverview({ contact }: { contact: Contact }) {
 
 	return (
 		<DetailSheetBody>
-			<DetailSheetSection title="Details" action={<FieldsCog kind="contact" />}>
+			<DetailSheetSection title="Contactar">
+				<ContactQuickActions
+					phone={contact.phone}
+					instagramHandle={contact.retailProfile?.instagramHandle ?? null}
+				/>
+				<DetailSheetProse>
+					Completa el teléfono con código de país o Instagram para habilitar los
+					accesos. No envían mensajes automáticamente.
+				</DetailSheetProse>
+			</DetailSheetSection>
+			<DetailSheetSection
+				title="Datos del cliente"
+				action={<FieldsCog kind="contact" />}
+			>
+				<DetailSheetProse>
+					Incluye el código de país para abrir WhatsApp. El canal preferido no
+					autoriza campañas.
+				</DetailSheetProse>
 				<DetailSheetProperties>
 					<InlineField
-						label="First name"
+						label="Nombre"
 						value={contact.firstName}
 						saving={isSaving("firstName")}
 						onSave={(firstName) => firstName && save({ firstName })}
 					/>
 					<InlineField
-						label="Last name"
+						label="Apellidos"
 						value={contact.lastName}
 						saving={isSaving("lastName")}
 						onSave={(lastName) => save({ lastName })}
 					/>
 					<InlineField
-						label="Title"
+						label="Cargo"
 						value={contact.title}
-						placeholder="Head of Security"
+						placeholder="Cliente o encargado de compras"
 						saving={isSaving("title")}
 						onSave={(title) => save({ title })}
 						{...agentProps("title")}
 					/>
 					<InlineField
-						label="Email"
+						label="Correo electrónico"
 						value={contact.email}
 						type="email"
 						saving={isSaving("email")}
 						onSave={(email) => save({ email })}
 					/>
 					<InlineField
-						label="Phone"
+						label="Teléfono / WhatsApp"
 						value={contact.phone}
 						type="tel"
+						placeholder="+51 999 123 456"
 						saving={isSaving("phone")}
 						onSave={(phone) => save({ phone })}
+					/>
+					<InlineField
+						label="Instagram"
+						value={contact.retailProfile?.instagramHandle ?? null}
+						placeholder="@usuario"
+						saving={isSaving("instagramHandle")}
+						onSave={(instagramHandle) => {
+							const parsed = contactProfileInput.safeParse({ instagramHandle });
+							if (!parsed.success) {
+								toast.error(parsed.error.issues[0]?.message);
+								return;
+							}
+							update.mutate({ id: contact.id, data: parsed.data });
+						}}
+					/>
+					<InlineSelectField
+						label="Canal preferido"
+						value={contact.retailProfile?.preferredChannel ?? NONE}
+						options={[
+							{ value: NONE, label: "Sin preferencia" },
+							...CONTACT_CHANNELS,
+						]}
+						saving={isSaving("preferredChannel")}
+						onSave={(preferredChannel) => {
+							const parsed = contactProfileInput.safeParse({
+								preferredChannel:
+									preferredChannel === NONE ? "" : preferredChannel,
+							});
+							if (parsed.success)
+								update.mutate({ id: contact.id, data: parsed.data });
+						}}
 					/>
 					<InlineField
 						label="LinkedIn"
@@ -393,7 +447,7 @@ function ContactOverview({ contact }: { contact: Contact }) {
 						}
 					/>
 					<InlineSelectField
-						label="Owner"
+						label="Responsable"
 						value={contact.owner?.id ?? NONE}
 						options={[
 							{ value: NONE, label: "Unassigned" },

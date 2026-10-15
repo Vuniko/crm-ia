@@ -39,6 +39,7 @@ import {
 	resolveOrderBy,
 	splitSentinel,
 } from "../trpc/list-input";
+import { readContactProfile, writeContactProfile } from "./contact-profile";
 import type {
 	ContactBulkCompanyInput,
 	ContactBulkOwnerInput,
@@ -232,6 +233,7 @@ export class ContactsService {
 		return {
 			...rest,
 			company,
+			retailProfile: await readContactProfile(this.db, id),
 			fields: await this.fields.valuesFor("CONTACT", id),
 			queued: await this.queue.isQueued({ contactId: id }),
 			createdAt: createdAt.toISOString(),
@@ -308,6 +310,7 @@ export class ContactsService {
 					createdAt: true,
 				},
 			});
+			await writeContactProfile(tx, created.id, input);
 			await emit({
 				type: "contact.created",
 				record: { kind: "contact", id: created.id },
@@ -509,6 +512,8 @@ export class ContactsService {
 					data,
 					select: { id: true, firstName: true, lastName: true },
 				});
+
+				await writeContactProfile(tx, id, input);
 
 				if (email !== null) {
 					await this.allowAgain(tx, email);

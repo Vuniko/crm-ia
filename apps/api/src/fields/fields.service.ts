@@ -19,12 +19,17 @@ import {
 	writeValues,
 } from "@crm/db/fields";
 import {
+	CONTACT_PROFILE_FIELDS,
+	isContactProfileField,
+} from "@crm/validation/contact-profile";
+import {
 	BadRequestException,
 	ConflictException,
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
 import { AgentTriggerService } from "../agent/agent-trigger.service";
+import { assertNoProfileFieldWrites } from "../contacts/contact-profile";
 import { InjectDatabase } from "../database/database.constants";
 import type {
 	FieldCreateInput,
@@ -55,7 +60,19 @@ export class FieldsService {
 		includeArchived: boolean,
 	): Promise<SerializedField[]> {
 		const definitions = await this.db.fieldDefinition.findMany({
-			where: { entity, archivedAt: includeArchived ? undefined : null },
+			where: {
+				entity,
+				archivedAt: includeArchived ? undefined : null,
+				...(entity === "CONTACT"
+					? {
+							id: {
+								notIn: Object.values(CONTACT_PROFILE_FIELDS).map(
+									(field) => field.id,
+								),
+							},
+						}
+					: {}),
+			},
 			include: WITH_OPTIONS,
 			orderBy: { position: "asc" },
 		});
@@ -149,6 +166,8 @@ export class FieldsService {
 		});
 
 		if (!existing) throw new NotFoundException("That field does not exist.");
+
+		this.assertEditableDefinition(existing);
 
 		const type = data.type ?? existing.type;
 
@@ -264,6 +283,11 @@ export class FieldsService {
 	}
 
 	async archive(id: string): Promise<SerializedField> {
+		const definition = await this.db.fieldDefinition.findUnique({
+			where: { id },
+			select: { id: true, entity: true, key: true },
+		});
+		if (definition) this.assertEditableDefinition(definition);
 		try {
 			const definition = await this.db.fieldDefinition.update({
 				where: { id },
@@ -278,6 +302,11 @@ export class FieldsService {
 	}
 
 	async restore(id: string): Promise<SerializedField> {
+		const definition = await this.db.fieldDefinition.findUnique({
+			where: { id },
+			select: { id: true, entity: true, key: true },
+		});
+		if (definition) this.assertEditableDefinition(definition);
 		try {
 			const definition = await this.db.fieldDefinition.update({
 				where: { id },
@@ -292,6 +321,11 @@ export class FieldsService {
 	}
 
 	async delete(id: string): Promise<{ id: string }> {
+		const definition = await this.db.fieldDefinition.findUnique({
+			where: { id },
+			select: { id: true, entity: true, key: true },
+		});
+		if (definition) this.assertEditableDefinition(definition);
 		try {
 			await this.db.fieldDefinition.delete({ where: { id } });
 		} catch (error) {
@@ -613,6 +647,8 @@ export class FieldsService {
 		values: Record<string, unknown>,
 	): Promise<void> {
 		if (Object.keys(values).length === 0) return;
+		if (entity === "CONTACT")
+			await assertNoProfileFieldWrites(tx, Object.keys(values));
 
 		const definitions = await this.definitionsFor(entity, tx);
 
@@ -624,6 +660,18 @@ export class FieldsService {
 			}
 
 			throw error;
+		}
+	}
+
+	private assertEditableDefinition(field: {
+		id: string;
+		entity: string;
+		key: string;
+	}) {
+		if (isContactProfileField(field.entity, field.key, field.id)) {
+			throw new BadRequestException(
+				"Este campo pertenece a la ficha del cliente. Edita su valor desde el contacto.",
+			);
 		}
 	}
 

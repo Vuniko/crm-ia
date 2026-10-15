@@ -6,6 +6,10 @@ import {
 	RecordSource,
 } from "@crm/db";
 import { FIELD_ENTITIES, FIELD_TYPES } from "@crm/db/fields";
+import {
+	contactProfile,
+	contactProfileInput,
+} from "@crm/validation/contact-profile";
 import { z } from "zod";
 import { bulkIdsInput } from "../crm/bulk";
 import { recordFieldValues } from "../fields/fields.contracts";
@@ -26,6 +30,7 @@ export const contactListInput = listInput.extend({
 export type ContactListInput = z.infer<typeof contactListInput>;
 
 export const contactCreateInput = z.object({
+	...contactProfileInput.shape,
 	firstName: z.string().trim().min(1, "A contact needs a first name."),
 	lastName: z.string().trim().optional(),
 	email: z.email("That is not an email address.").optional().or(z.literal("")),
@@ -38,6 +43,7 @@ export const contactCreateInput = z.object({
 export type ContactCreateInput = z.infer<typeof contactCreateInput>;
 
 const contactUpdateInput = z.object({
+	...contactProfileInput.shape,
 	firstName: z.string().trim().min(1).optional(),
 	lastName: z.string().optional(),
 	email: z.string().optional(),
@@ -224,6 +230,7 @@ const contactDealOutput = z.object({
 });
 
 export const contactByIdOutput = z.object({
+	retailProfile: contactProfile,
 	id: z.string(),
 	firstName: z.string(),
 	lastName: z.string().nullable(),
