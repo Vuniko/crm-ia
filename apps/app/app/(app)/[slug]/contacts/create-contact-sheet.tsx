@@ -2,12 +2,18 @@
 
 import Add from "@carbon/icons-react/es/Add";
 import { Button } from "@crm/ui/components/button";
-import { Field, FieldGroup, FieldLabel } from "@crm/ui/components/field";
+import {
+	Field,
+	FieldDescription,
+	FieldGroup,
+	FieldLabel,
+} from "@crm/ui/components/field";
 import { Icon } from "@crm/ui/components/icon";
 import { Input } from "@crm/ui/components/input";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -23,6 +29,11 @@ import {
 	SheetTrigger,
 } from "@crm/ui/components/sheet";
 import { Spinner } from "@crm/ui/components/spinner";
+import {
+	CONTACT_CHANNELS,
+	contactProfileInput,
+	instagramHandle as instagramHandleSchema,
+} from "@crm/validation/contact-profile";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { type ComponentProps, Suspense, useId, useState } from "react";
@@ -65,6 +76,10 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 	const [lastName, setLastName] = useState("");
 	const [email, setEmail] = useState("");
 	const [title, setTitle] = useState("");
+	const [phone, setPhone] = useState("");
+	const [instagramHandle, setInstagramHandle] = useState("");
+	const [preferredChannel, setPreferredChannel] = useState(NONE);
+	const instagramCheck = instagramHandleSchema.safeParse(instagramHandle);
 	const [company, setCompany] = useState(companyId ?? NONE);
 	const [ownerId, setOwnerId] = useState(NONE);
 
@@ -72,6 +87,10 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 	const lastNameId = useId();
 	const emailId = useId();
 	const titleId = useId();
+	const phoneId = useId();
+	const instagramId = useId();
+	const instagramHelpId = useId();
+	const channelId = useId();
 
 	const users = useQuery(trpc.users.list.queryOptions());
 
@@ -87,6 +106,9 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 				setLastName("");
 				setEmail("");
 				setTitle("");
+				setPhone("");
+				setInstagramHandle("");
+				setPreferredChannel(NONE);
 				setCompany(companyId ?? NONE);
 				setOwnerId(NONE);
 				openRecord({ kind: "contact", id: contact.id });
@@ -115,7 +137,15 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 					onSubmit={(event) => {
 						event.preventDefault();
 						if (create.isPending || !firstName.trim()) return;
+						const profile = contactProfileInput.safeParse({
+							instagramHandle,
+							preferredChannel:
+								preferredChannel === NONE ? "" : preferredChannel,
+						});
+						if (!profile.success) return;
 						create.mutate({
+							...profile.data,
+							phone: phone.trim() || undefined,
 							firstName: firstName.trim(),
 							lastName: lastName.trim() || undefined,
 							email: email.trim() || undefined,
@@ -158,6 +188,63 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 							/>
 						</Field>
 
+						<Field>
+							<FieldLabel htmlFor={phoneId}>Teléfono / WhatsApp</FieldLabel>
+							<Input
+								id={phoneId}
+								type="tel"
+								autoComplete="tel"
+								value={phone}
+								onChange={(event) => setPhone(event.target.value)}
+								placeholder="+51 999 123 456"
+							/>
+							<FieldDescription>
+								Incluye + y código de país para abrir WhatsApp. No se comprueba
+								si el número tiene WhatsApp.
+							</FieldDescription>
+						</Field>
+						<Field data-invalid={!instagramCheck.success || undefined}>
+							<FieldLabel htmlFor={instagramId}>Instagram</FieldLabel>
+							<Input
+								id={instagramId}
+								value={instagramHandle}
+								onChange={(event) => setInstagramHandle(event.target.value)}
+								placeholder="@ana.demo"
+								autoComplete="off"
+								aria-invalid={!instagramCheck.success || undefined}
+								aria-describedby={instagramHelpId}
+							/>
+							<FieldDescription id={instagramHelpId}>
+								{instagramCheck.success
+									? "Usuario opcional, sin enlace."
+									: instagramCheck.error.issues[0]?.message}
+							</FieldDescription>
+						</Field>
+						<Field>
+							<FieldLabel htmlFor={channelId}>Canal preferido</FieldLabel>
+							<Select
+								value={preferredChannel}
+								onValueChange={setPreferredChannel}
+							>
+								<SelectTrigger id={channelId}>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										<SelectItem value={NONE}>Sin preferencia</SelectItem>
+										{CONTACT_CHANNELS.map((channel) => (
+											<SelectItem key={channel.value} value={channel.value}>
+												{channel.label}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+							<FieldDescription>
+								Indica cómo prefiere recibir seguimiento. No implica
+								consentimiento para campañas.
+							</FieldDescription>
+						</Field>
 						<Field>
 							<FieldLabel htmlFor={titleId}>Cargo (opcional)</FieldLabel>
 							<Input
@@ -204,7 +291,11 @@ function CreateContactForm({ companyId }: { companyId?: string }) {
 					<Button
 						type="submit"
 						form="create-contact"
-						disabled={create.isPending || firstName.trim() === ""}
+						disabled={
+							create.isPending ||
+							firstName.trim() === "" ||
+							!instagramCheck.success
+						}
 					>
 						{create.isPending ? <Spinner /> : null}
 						Crear contacto
